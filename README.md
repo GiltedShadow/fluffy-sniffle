@@ -1,2 +1,2 @@
 # fluffy-sniffle
-Zero to Hero Python course milestone project 1
+Zero to Hero Python course milestone projects
