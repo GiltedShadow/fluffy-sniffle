@@ -8,10 +8,17 @@ This program must contain:
 3. program must keep track of the players total money
 4. need to alert for player wins, losses, and busts
 """
-
+from os import system
 import sys
 import time
 import random
+
+gameName = r"""
+ ______     __         ______     ______     __  __          __     ______     ______     __  __    
+/\  == \   /\ \       /\  __ \   /\  ___\   /\ \/ /         /\ \   /\  __ \   /\  ___\   /\ \/ /    
+\ \  __<   \ \ \____  \ \  __ \  \ \ \____  \ \  _"-.      _\_\ \  \ \  __ \  \ \ \____  \ \  _"-.  
+ \ \_____\  \ \_____\  \ \_\ \_\  \ \_____\  \ \_\ \_\    /\_____\  \ \_\ \_\  \ \_____\  \ \_\ \_\ 
+  \/_____/   \/_____/   \/_/\/_/   \/_____/   \/_/\/_/    \/_____/   \/_/\/_/   \/_____/   \/_/\/_/ """
 
 ruleLettering = r"""
  ______     __  __     __         ______     ______    
@@ -24,7 +31,7 @@ rules = r"""
 >The goal is to get as close as possible to 21 without going over
 >Aces are 11 or 1
 >Face cards are 10
->Bets are limited between $2 and $500
+>All bets up to $500 are accepted, starting cash is $1000
 >All players cards are delt face up with the dealer having 1 face down card
 >When the player has a "natural" (an ace and a 10 card) giving an immeadiate 21, dealer pays 1.5x times the payer bet
 >if the dealer has a "natural" (an ace and a 10 card), all players lose their bet
@@ -55,16 +62,27 @@ Double down
 """
 
 #TODO add an advanced set of game rules for multiple players including deck cuts, using the same amount of decks as players, double down, and splitting pairs
-advancedGame = False
+advancedGame = False # game defaults to normal rules
 amountOfPlayers = 1
 playersList = []
+playersBets = []
+naturalCheck = {}
 fastType = False
-
+gameModeRunOut = True
+gameModeRoundsToPlay = 0
 
 suits = ["Hearts", "Clubs", "Spades", "Diamonds"]
 ranks = ["Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"]
 values = {"Two": 2, "Three": 3, "Four": 4, "Five": 5, "Six": 6, "Seven": 7, "Eight": 8, "Nine": 9, "Ten": 10, "Jack": 10, "Queen": 10, "King": 10, "Ace": 11}
 display = {
+    "Dealer":
+    r"""
+.------.
+| .--. |
+| :/\: |
+| :\/: |
+| '--' |
+`------'""",
     "Two":
     r"""
 .------.
@@ -265,7 +283,7 @@ class Player:
         for card in range(len(self.hand)):
             print(display[str(self.hand[card])])
 
-    def player_information_pintout(self):
+    def player_information_printout(self):
         return f"Player {self.name} has {self.bank} in their bank"
     
     def __str__(self):
@@ -281,6 +299,11 @@ class Dealer(Player):
             self.hand.append(deck.deal())
         return display[str(self.hand[1])]
     
+    def initial_hand_display(self):
+        print("Dealers initial hand: ")
+        print(display["Dealer"])
+        print(display[str(self.hand[1])])
+
     def __str__(self):
         return "Dealer is watching over the game"
     
@@ -304,13 +327,7 @@ def intro():
     slow_type("Welcome to Alex's")
     time.sleep(.5)
     fastType = True
-    slow_type(r"""
- ______     __         ______     ______     __  __          __     ______     ______     __  __    
-/\  == \   /\ \       /\  __ \   /\  ___\   /\ \/ /         /\ \   /\  __ \   /\  ___\   /\ \/ /    
-\ \  __<   \ \ \____  \ \  __ \  \ \ \____  \ \  _"-.      _\_\ \  \ \  __ \  \ \ \____  \ \  _"-.  
- \ \_____\  \ \_____\  \ \_\ \_\  \ \_____\  \ \_\ \_\    /\_____\  \ \_\ \_\  \ \_____\  \ \_\ \_\ 
-  \/_____/   \/_____/   \/_/\/_/   \/_____/   \/_/\/_/    \/_____/   \/_/\/_/   \/_____/   \/_/\/_/ 
-""")
+    slow_type(gameName)
 
 def print_rules():
     global fastType
@@ -340,6 +357,7 @@ def player_request():
         player_request()
     elif amountOfPlayers < 1:
         print("A minimm of 1 player must be chosen, please enter a number from 1 to 7")
+        player_request()
     
     if amountOfPlayers > 1:
         multiple_players_multiple_decks(amountOfPlayers - 1)
@@ -351,7 +369,7 @@ def create_players(amountOfPlayers):
         newPlayer = input(f"Player {player+1}, please enter your name: ")
         
         playersList.append(Player(newPlayer))
-    pass
+    
 
 def multiple_players_multiple_decks(amountOfNewDecks):
     # called when requested to be above 1 player, will then add extra decks to match the number of players and then cut the deck
@@ -367,25 +385,79 @@ def initiate_starting_deck():
     mainDeck.shuffle()
     mainDeck.split()
 
+def resize_terminal():
+    system('mode con: cols=150 lines=49')
+    pass
+
 def game_mode_selection():
-    #TODO make a selction to turn on advanced rules
-    pass
+    global gameModeRoundsToPlay
+    global gameModeRunOut
+    global advancedGame
 
-def play_until():
+    #TODO make advaned rules work
+
+    # Can probably make this and "play_until" the same function, only run once at the beginning of the game
+    gameModeCheck = input("Default settings for the game is normal rules with runout - that is player(s) will run out of money\nTo change this, please enter an amount of rounds to play, otherwise just hit enter to runout: ")
+
+    if gameModeCheck != '':
+        try:
+            gameModeRoundsToPlay = int(gameModeCheck)
+            gameModeRunOut = False
+        except ValueError:
+            print("Please enter a number, or just press enter to play as runout.")
+            game_mode_selection()
+    
+    gameModeCheck = input("Would you like to play by advanced rules including pairs splitting and double downs? (y/n):")
+
+    if gameModeCheck.lower() == 'y':
+        advancedGame = True
+    elif gameModeCheck.lower() == 'n':
+        advancedGame = False
+
+def play_until(gameModeRoundsToPlay):
     #TODO request the number of rounds to play or run out of cash
-
+    # functionality moved to game_mode_selection
     pass
 
-def starting_deal():
+def first_round_deal():
     #TODO get the initial deal out for each player and the dealer
-    pass
-
+    for player in playersList:
+        player.starting_deal(mainDeck)
+    
+    mrDeal.starting_deal(mainDeck)
+    print(mrDeal)
+    mrDeal.initial_hand_display()
+    
 def show_all_hands():
-    #TODO display the cards for each player and the single for the dealer
-    pass
+    #TODO display the cards for each player 
+    for player in playersList:
+        print(player.player_information_printout())
+        player.print_out_hand()
+        print(player.get_card_total())
+
 
 def betting_round():
     #TODO request bets, and check for naturals - player first
+    playerCount = len(playersList)
+    n = 0
+    while n <= playerCount:
+        betRequest = input(f"{n +1} please enter your bet up to $500: ")
+        try:
+            betRequest = int(betRequest)
+        except ValueError:
+            print("please enter a number and not a word value")
+            continue
+
+        if betRequest > 500:
+            print("Please enter a value $500 or under")
+            continue
+        elif betRequest < 1:
+            print("Please enter a real value of money, this should not be zero or negative")
+            continue
+        elif betRequest >= 1 <= 500:
+            playersBets[n] = betRequest
+
+            n += 1
     pass
 
 def natural_check():
@@ -422,18 +494,28 @@ def test_numero_two():
     print(mrDeal)
 
 initiate_starting_deck()
+mrDeal = Dealer()
+#resize_terminal()
+# eyy it works!!
+# good to keep in mind
 #intro()
 #time.sleep(1)
 #print_rules()
+# noticing a problem here, the terminal isnt big enough to handle the "advanced rules" all together
+# I can split the words but i wanna try resizing the terminal first 
 
 game_mode_selection()
-play_until()
-#player_request()
+player_request()
+first_round_deal()
+show_all_hands()
+betting_round()
+natural_check()
+while True:
+
+    pass
 
 
-
-
-
+"""
 create_players(3)
 for x in range(len(playersList)):
     playersList[x].starting_deal(mainDeck)
@@ -441,3 +523,4 @@ for x in range(len(playersList)):
     playersList[x].hit(mainDeck)
     playersList[x].print_out_hand()
     print(playersList[x].get_card_total())
+"""
