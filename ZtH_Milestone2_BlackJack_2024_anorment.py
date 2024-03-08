@@ -61,15 +61,18 @@ Double down
 >The dealer cannot double down or split pairs, and the player cannot do both but only play one way; normally, split, or double down
 """
 
-#TODO add an advanced set of game rules for multiple players including deck cuts, using the same amount of decks as players, double down, and splitting pairs
+#TODO add advanced rules capability
 advancedGame = False # game defaults to normal rules
 amountOfPlayers = 1
 playersList = []
 playersBets = []
-naturalCheck = {}
+playerNaturalCheck = {}
+dealerBlackJack = False
 fastType = False
 gameModeRunOut = True
 gameModeRoundsToPlay = 0
+currentRound = 0
+active = True
 
 suits = ["Hearts", "Clubs", "Spades", "Diamonds"]
 ranks = ["Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"]
@@ -250,6 +253,8 @@ class Player:
         self.bank = 1000
         self.bet = 0
         self.active = True
+        self.roundOut = 0
+        self.bust = False
 
     def starting_deal(self, deck):
         # used once in order to deal 2 cards for starting hand
@@ -362,22 +367,26 @@ def player_request():
     if amountOfPlayers > 1:
         multiple_players_multiple_decks(amountOfPlayers - 1)
 
-    create_players(amountOfPlayers)
+    #create_players(amountOfPlayers) #likely do not need this function since its only called here
+    for player in range(amountOfPlayers):
+        newPlayer = input(f"Player {player+1}, please enter your name: ")
+        
+        playersList.append(Player(newPlayer))
 
 def create_players(amountOfPlayers):
+    #likely do not need this function since its only called here
     for player in range(amountOfPlayers):
         newPlayer = input(f"Player {player+1}, please enter your name: ")
         
         playersList.append(Player(newPlayer))
     
-
 def multiple_players_multiple_decks(amountOfNewDecks):
     # called when requested to be above 1 player, will then add extra decks to match the number of players and then cut the deck
     for i in range(amountOfNewDecks):
         i = Deck()
         mainDeck.combine(i)
     mainDeck.shuffle()
-    mainDeck.cut()
+    print(mainDeck.cut())
 
 def initiate_starting_deck():
     global mainDeck 
@@ -407,7 +416,7 @@ def game_mode_selection():
             print("Please enter a number, or just press enter to play as runout.")
             game_mode_selection()
     
-    gameModeCheck = input("Would you like to play by advanced rules including pairs splitting and double downs? (y/n):")
+    gameModeCheck = input("Would you like to play by advanced rules including pairs splitting and double downs? (y/n): \nAdvaned rules currently not supported")
 
     if gameModeCheck.lower() == 'y':
         advancedGame = True
@@ -420,7 +429,7 @@ def play_until(gameModeRoundsToPlay):
     pass
 
 def first_round_deal():
-    #TODO get the initial deal out for each player and the dealer
+    # get the initial deal out for each player and the dealer, and displayes dealer 1 card
     for player in playersList:
         player.starting_deal(mainDeck)
     
@@ -429,19 +438,21 @@ def first_round_deal():
     mrDeal.initial_hand_display()
     
 def show_all_hands():
-    #TODO display the cards for each player 
+    # display the cards for each player 
     for player in playersList:
         print(player.player_information_printout())
         player.print_out_hand()
         print(player.get_card_total())
-
+        print("\n\n")
 
 def betting_round():
-    #TODO request bets, and check for naturals - player first
+    #request bets, and check for naturals - player first - no calls needed, game is player vs dealer
+
     playerCount = len(playersList)
     n = 0
     while n <= playerCount:
-        betRequest = input(f"{n +1} please enter your bet up to $500: ")
+        cashAvailable = playersList[n].bank
+        betRequest = input(f"{playersList[n]}, please enter your bet up to $500, you have ${cashAvailable} to bet: ")
         try:
             betRequest = int(betRequest)
         except ValueError:
@@ -455,72 +466,123 @@ def betting_round():
             print("Please enter a real value of money, this should not be zero or negative")
             continue
         elif betRequest >= 1 <= 500:
+            if betRequest > cashAvailable:
+                print("That is more than the money you have to bet")
+                continue
             playersBets[n] = betRequest
 
             n += 1
-    pass
 
 def natural_check():
-    # Check for naturals - players first
-    pass
+    # Check for naturals - players first (first round only)
+
+    if len(playersList[0].hand) > 2:
+        return
+    for player in playersList:
+        if player.get_card_total() == 21:
+            playerNaturalCheck[str(player.name)] = True
+        else:
+            playerNaturalCheck[str(player.name)] = False
 
 def player_turn():
     #TODO player turn until all players are finished, must display final point score and if the player busts
+    #TODO add advanced logic
+
+
+
+
     pass
 
 def dealer_turn():
-    #TODO dealer turn
-    pass
+    # dealer turn, moved dealer natural check here since the original deal only showed 1 card
+    global dealerBlackJack
 
+    print("Dealers turn!")
+    mrDeal.print_out_hand()
+    dealerPoints = mrDeal.get_card_total()
+
+    while dealerPoints < 17:
+        mrDeal.hit()
+        print(display[str(mrDeal.hand[-1])])
+        dealerPoints = mrDeal.get_card_total()
+    
+    if dealerPoints == 21:
+        print("Dealer BlackJack!")
+        dealerBlackJack = True
+    elif dealerPoints > 21:
+        print("Dealer bust!\nEveryone still active wins!")
+    
 def payout_and_turn_end():
     #TODO payout, end turn
     #repeat until number of rounds is achieved or all players are zeroed out in the bank
+
+    n=0
+    
+    for player in playersList:
+        if player.active == False:
+            n += 1
+            continue
+        elif player.bust == True:
+            player.bank = player.bank - playersBets[n]
+            print(player.player_information_printout())
+            n += 1
+            continue
+
+        if dealerBlackJack == True: #TODO check against naturals for 1.0x payout, then non dealer blackjack and player natural for 1.5x payout, then normal wins and losses
+            player.bank = player.bank - playersBets[n]
     pass
 
-def test_numero_one():
-    John = Player(input("Player 1, please enter your name: "))
+def reset_all(playerCount):
+    #this will reset all player hands and check to make sure the deck has enough cards to make it through next round
 
-    John.starting_deal(mainDeck)
-    John.hit(mainDeck)
-    John.hit(mainDeck)
-    John.print_out_hand()
-    print(John.get_card_total())
+    for player in playersList:
+        player.hand.clear()
+        player.bust = False
+        if player.active == False:
+            print(f"{player.name} has lost after {player.roundOut} rounds")
+        else:
+            print(player.player_information_printout())
+    
+    if len(mainDeck)/5 <= playerCount:
+        #time to reset the deck!
+        print(f"Reshuffling the deck! Well done lasting this long everyone :D")
+        initiate_starting_deck()
+        if playerCount > 1:
+            multiple_players_multiple_decks(playerCount - 1)
 
-def test_numero_two():
-    mrDeal = Dealer()
-    print(mrDeal.starting_deal(mainDeck))
-    mrDeal.print_out_hand()
-    print(mrDeal.get_card_total())
-    print(mrDeal)
+
+def final_thanks_and_final_printout():
+    #TODO final thanks and final printout
+    
+
+    pass
+
+"""
+Basic game logic to follow
+after initial setup, looping logic will run until the game is complete
+"""
 
 initiate_starting_deck()
 mrDeal = Dealer()
-#resize_terminal()
-# eyy it works!!
-# good to keep in mind
+#resize_terminal()  # eyy it works!!  good to keep in mind for future projects
 #intro()
 #time.sleep(1)
 #print_rules()
 # noticing a problem here, the terminal isnt big enough to handle the "advanced rules" all together
 # I can split the words but i wanna try resizing the terminal first 
-
 game_mode_selection()
 player_request()
-first_round_deal()
-show_all_hands()
-betting_round()
-natural_check()
-while True:
 
-    pass
+while active:
+    first_round_deal()
+    betting_round()
+    show_all_hands()
+    betting_round()
+    natural_check()
+    player_turn()
+    dealer_turn()
+    payout_and_turn_end()
+    reset_all(amountOfPlayers)
 
+final_thanks_and_final_printout()
 
-"""
-create_players(3)
-for x in range(len(playersList)):
-    playersList[x].starting_deal(mainDeck)
-    playersList[x].hit(mainDeck)
-    playersList[x].hit(mainDeck)
-    playersList[x].print_out_hand()
-    print(playersList[x].get_card_total())
-"""
