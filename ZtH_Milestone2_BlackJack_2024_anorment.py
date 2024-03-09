@@ -68,6 +68,7 @@ playersList = []
 playersBets = []
 playerNaturalCheck = {}
 dealerBlackJack = False
+dealerNatural21 = False
 fastType = False
 gameModeRunOut = True
 gameModeRoundsToPlay = 0
@@ -469,12 +470,13 @@ def betting_round():
             if betRequest > cashAvailable:
                 print("That is more than the money you have to bet")
                 continue
-            playersBets[n] = betRequest
+            playersBets.append(betRequest)
 
             n += 1
 
 def natural_check():
     # Check for naturals - players first (first round only)
+    global dealerNatural21
 
     if len(playersList[0].hand) > 2:
         return
@@ -483,6 +485,9 @@ def natural_check():
             playerNaturalCheck[str(player.name)] = True
         else:
             playerNaturalCheck[str(player.name)] = False
+
+    if mrDeal.get_card_total() == 21:
+        dealerNatural21 = True
 
 def player_turn():
     #TODO player turn until all players are finished, must display final point score and if the player busts
@@ -528,8 +533,16 @@ def payout_and_turn_end():
             n += 1
             continue
 
-        if dealerBlackJack == True: #TODO check against naturals for 1.0x payout, then non dealer blackjack and player natural for 1.5x payout, then normal wins and losses
+        if dealerNatural21 == True: #TODO check against naturals for 1.0x payout, then non dealer blackjack and player natural for 1.5x payout, then normal wins and losses
+            for player in playersList:
+                if playerNaturalCheck[str(player.name)] == True:
+                    player.bank = player.bank + playersBets[n]
+                    print(f"{player.name} has countered a dealer natural with one of their own! You win you bet back!")
+                pass
             player.bank = player.bank - playersBets[n]
+        
+        if dealerBlackJack == False:
+            pass
     pass
 
 def reset_all(playerCount):
