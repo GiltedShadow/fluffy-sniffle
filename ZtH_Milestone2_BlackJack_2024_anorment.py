@@ -65,10 +65,9 @@ Double down
 advancedGame = False # game defaults to normal rules
 amountOfPlayers = 1
 playersList = []
-playersBets = []
-playerNaturalCheck = {}
-dealerBlackJack = False
-dealerNatural21 = False
+# playerNaturalCheck = {}
+# dealerBlackJack = False
+# dealerNatural21 = False
 fastType = False
 gameModeRunOut = True
 gameModeRoundsToPlay = 0
@@ -256,6 +255,8 @@ class Player:
         self.active = True
         self.roundOut = 0
         self.bust = False
+        self.natural = False
+        self.backjack = False
 
     def starting_deal(self, deck):
         # used once in order to deal 2 cards for starting hand
@@ -268,6 +269,9 @@ class Player:
         # used every time a player hits
         self.hand.append(deck.deal())
 
+    def print_out_card_total(self):
+        return f"{self.name}'s card total is: {self.get_card_total()}"
+    
     def get_card_total(self):
         # checks the total points that the player has and if the player busts *and* has an ace will return the lower number for the ace
         total =0
@@ -279,9 +283,9 @@ class Player:
             total += int(self.hand[card])
 
         if total > 21 and hasAce == True:
-            return f"{self.name}'s card total is: {total - 10}"
+            return total - 10 # issue here, need a comparison int
         else:
-            return f"{self.name}'s card total is: {total}"
+            return total
 
     def print_out_hand(self):
         # prints out the cards in the players hand all fancy like
@@ -299,6 +303,9 @@ class Dealer(Player):
     def __init__(self, name = "Dealer"):
         self.name = name
         self.hand = []
+        self.natural = False
+        self.bust = False
+        self.blackjack = False
 
     def starting_deal(self, deck):
         for _ in range(2):
@@ -443,7 +450,7 @@ def show_all_hands():
     for player in playersList:
         print(player.player_information_printout())
         player.print_out_hand()
-        print(player.get_card_total())
+        print(player.print_out_card_total())
         print("\n\n")
 
 def betting_round():
@@ -451,7 +458,7 @@ def betting_round():
 
     playerCount = len(playersList)
     n = 0
-    while n <= playerCount:
+    while n < playerCount:
         cashAvailable = playersList[n].bank
         betRequest = input(f"{playersList[n]}, please enter your bet up to $500, you have ${cashAvailable} to bet: ")
         try:
@@ -470,24 +477,27 @@ def betting_round():
             if betRequest > cashAvailable:
                 print("That is more than the money you have to bet")
                 continue
-            playersBets.append(betRequest)
+            playersList[n].bet = betRequest
 
             n += 1
 
 def natural_check():
     # Check for naturals - players first (first round only)
-    global dealerNatural21
+    # global dealerNatural21
 
     if len(playersList[0].hand) > 2:
         return
     for player in playersList:
         if player.get_card_total() == 21:
-            playerNaturalCheck[str(player.name)] = True
+            player.natural = True
+            # playerNaturalCheck[str(player.name)] = True
         else:
-            playerNaturalCheck[str(player.name)] = False
+            player.natural = False
+            # playerNaturalCheck[str(player.name)] = False
 
     if mrDeal.get_card_total() == 21:
-        dealerNatural21 = True
+        mrDeal.natural = True
+        # dealerNatural21 = True
 
 def player_turn():
     #TODO player turn until all players are finished, must display final point score and if the player busts
@@ -507,7 +517,7 @@ def dealer_turn():
     dealerPoints = mrDeal.get_card_total()
 
     while dealerPoints < 17:
-        mrDeal.hit()
+        mrDeal.hit(mainDeck)
         print(display[str(mrDeal.hand[-1])])
         dealerPoints = mrDeal.get_card_total()
     
@@ -515,6 +525,7 @@ def dealer_turn():
         print("Dealer BlackJack!")
         dealerBlackJack = True
     elif dealerPoints > 21:
+        mrDeal.bust = True
         print("Dealer bust!\nEveryone still active wins!")
     
 def payout_and_turn_end():
@@ -524,23 +535,35 @@ def payout_and_turn_end():
     n=0
     
     for player in playersList:
+        
+        # immeadiatly weed out players that have lost in previous rounds
         if player.active == False:
             n += 1
             continue
+
+        # dealer bust + player still active
+        if mrDeal.bust == True and player.bust == False:
+            print(f"{player.name} has won {player.bet}!")
+            player.bank = player.bank + player.bet
+
+        # taking the bet amount away from players that have bust this round
         elif player.bust == True:
-            player.bank = player.bank - playersBets[n]
+            player.bank = player.bank - player.bet
             print(player.player_information_printout())
             n += 1
             continue
 
-        if dealerNatural21 == True: #TODO check against naturals for 1.0x payout, then non dealer blackjack and player natural for 1.5x payout, then normal wins and losses
+        # against dealer natural, only way to win is for the player to also have a natural
+        if mrDeal.natural == True: 
             for player in playersList:
-                if playerNaturalCheck[str(player.name)] == True:
-                    player.bank = player.bank + playersBets[n]
+                if player.natural == True:
+                    player.bank = player.bank + player.bet
                     print(f"{player.name} has countered a dealer natural with one of their own! You win you bet back!")
                 pass
-            player.bank = player.bank - playersBets[n]
+            player.bank = player.bank - player.bet
         
+
+        #TODO check against naturals for 1.0x payout, then non dealer blackjack and player natural for 1.5x payout, then normal wins and losses
         if dealerBlackJack == False:
             pass
     pass
@@ -551,8 +574,10 @@ def reset_all(playerCount):
     for player in playersList:
         player.hand.clear()
         player.bust = False
+        player.natural = False
         if player.active == False:
             print(f"{player.name} has lost after {player.roundOut} rounds")
+            player.roundOut = currentRound
         else:
             print(player.player_information_printout())
     
@@ -562,6 +587,8 @@ def reset_all(playerCount):
         initiate_starting_deck()
         if playerCount > 1:
             multiple_players_multiple_decks(playerCount - 1)
+    
+
 
 
 def final_thanks_and_final_printout():
@@ -583,6 +610,7 @@ mrDeal = Dealer()
 #print_rules()
 # noticing a problem here, the terminal isnt big enough to handle the "advanced rules" all together
 # I can split the words but i wanna try resizing the terminal first 
+print(str(mrDeal.natural))
 game_mode_selection()
 player_request()
 
@@ -590,12 +618,12 @@ while active:
     first_round_deal()
     betting_round()
     show_all_hands()
-    betting_round()
     natural_check()
     player_turn()
     dealer_turn()
     payout_and_turn_end()
     reset_all(amountOfPlayers)
+    currentRound += 1
 
 final_thanks_and_final_printout()
 
