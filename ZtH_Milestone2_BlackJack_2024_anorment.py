@@ -77,6 +77,8 @@ active = True
 suits = ["Hearts", "Clubs", "Spades", "Diamonds"]
 ranks = ["Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"]
 values = {"Two": 2, "Three": 3, "Four": 4, "Five": 5, "Six": 6, "Seven": 7, "Eight": 8, "Nine": 9, "Ten": 10, "Jack": 10, "Queen": 10, "King": 10, "Ace": 11}
+
+# changing this out to display cards in order as opposed to one at a time (horizontal not vertical)
 display = {
     "Dealer":
     r"""
@@ -192,6 +194,56 @@ display = {
 `------'"""
 }
 
+displayHorizontal = {
+    'Top':      r".------.",
+    'Bottom':   r"`------'",
+
+    'c-2':      r"| |A+| |",
+    'c-3':      r"| |+N| |",
+
+    'Dealer-1': r"| .--. |", # Dealer
+    'Dealer-4': r"| '--' |",
+
+    'Two-1':    r"|2.--. |",
+    'Two-4':    r"| '--'2|",
+
+    'Three-1':  r"|3.--. |",
+    'Three-4':  r"| '--'3|",
+
+    'Four-1':   r"|4.--. |",
+    'Four-4':   r"| '--'4|",
+
+    'Five-1':   r"|5.--. |",
+    'Five-4':   r"| '--'5|",
+
+    'Six-1':    r"|6.--. |",
+    'Six-4':    r"| '--'6|",
+
+    'Seven-1':  r"|7.--. |",
+    'Seven-4':  r"| '--'7|",
+
+    'Eight-1':  r"|8.--. |",
+    'Eight-4':  r"| '--'8|",
+
+    'Nine-1':   r"|9.--. |",
+    'Nine-4':   r"| '--'9|",
+
+    'Ten-1':    r"|10--. |",
+    'Ten-4':    r"| '--10|",
+
+    'Jack-1':   r"|J.--. |",
+    'Jack-4':   r"| '--'J|",
+
+    'Queen-1':  r"|Q.--. |",
+    'Queen-4':  r"| '--'Q|",
+
+    'King-1':   r"|K.--. |",
+    'King-4':   r"| '--'K|",
+
+    'Ace-1':    r"|A.--. |",
+    'Ace-4':    r"| '--'A|"
+}
+
 class Card:
     def __init__(self, rank, suit):
         self.rank = rank
@@ -245,7 +297,7 @@ class Deck:
     def __len__(self):
         return len(self.deckOfCards)  
 
-class Player:
+class Player: #TODO add horizontal print
 
     def __init__(self, name):
         self.name = name
@@ -257,6 +309,14 @@ class Player:
         self.bust = False
         self.natural = False
         self.backjack = False
+        # kinda clunky here, but will display in a good view
+        self.displayedHandTop = []
+        self.displayedHandLineOne = []
+        self.displayedHandLineTwo = []
+        self.displayedHandLineThree = []
+        self.displayedHandLineFour = []
+        self.displayedHandBottom = []
+
 
     def starting_deal(self, deck):
         # used once in order to deal 2 cards for starting hand
@@ -287,11 +347,29 @@ class Player:
         else:
             return total
 
+    def add_card_to_display(self, card):
+        # adding cards to the display
+        self.displayedHandTop.append(displayHorizontal["Top"])
+        self.displayedHandLineOne.append(displayHorizontal[f"{card}-1"])
+        self.displayedHandLineTwo.append(displayHorizontal["c-2"])
+        self.displayedHandLineThree.append(displayHorizontal["c-3"])
+        self.displayedHandLineFour.append(displayHorizontal[f"{card}-4"])
+        self.displayedHandBottom.append(displayHorizontal["Bottom"])
+        
     def print_out_hand(self):
         # prints out the cards in the players hand all fancy like
-        print(f"{self.name}'s current hand:")
-        for card in range(len(self.hand)):
-            print(display[str(self.hand[card])])
+        # rewriting to print horizontal #TODO confirm work
+
+        print(" ".join(self.displayedHandTop))
+        print(" ".join(self.displayedHandLineOne))
+        print(" ".join(self.displayedHandLineTwo))
+        print(" ".join(self.displayedHandLineThree))
+        print(" ".join(self.displayedHandLineFour))
+        print(" ".join(self.displayedHandBottom))
+
+        #print(f"{self.name}'s current hand:")
+        #for card in range(len(self.hand)):
+        #    print(display[str(self.hand[card])])
 
     def player_information_printout(self):
         return f"Player {self.name} has {self.bank} in their bank"
@@ -299,13 +377,20 @@ class Player:
     def __str__(self):
         return self.name
     
-class Dealer(Player):
+class Dealer(Player): #TODO add horizontal printing
     def __init__(self, name = "Dealer"):
         self.name = name
         self.hand = []
         self.natural = False
         self.bust = False
         self.blackjack = False
+
+        self.displayedHandTop = []
+        self.displayedHandLineOne = []
+        self.displayedHandLineTwo = []
+        self.displayedHandLineThree = []
+        self.displayedHandLineFour = []
+        self.displayedHandBottom = []
 
     def starting_deal(self, deck):
         for _ in range(2):
