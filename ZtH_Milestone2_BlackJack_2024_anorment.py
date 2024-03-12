@@ -318,13 +318,17 @@ class Player: #TODO add horizontal print
     def starting_deal(self, deck):
         # used once in order to deal 2 cards for starting hand
         for _ in range(2):
-            self.hand.append(deck.deal())
+            card = deck.deal()
+            self.hand.append(card)
+            self.add_card_to_display(card)
         #print(self.hand[0])
         #print(self.hand[1])
             
     def hit(self, deck):
         # used every time a player hits
-        self.hand.append(deck.deal())
+        card = deck.deal()
+        self.hand.append(card)
+        self.add_card_to_display(card)
 
     def print_out_card_total(self):
         return f"{self.name}'s card total is: {self.get_card_total()}"
@@ -353,16 +357,16 @@ class Player: #TODO add horizontal print
         self.displayedHandLineFour.append(displayHorizontal[f"{card}-4"])
         self.displayedHandBottom.append(displayHorizontal["Bottom"])
         
-    def print_out_hand(self):
+    def print_out_hand(self, a=0, b=999, c=1):
         # prints out the cards in the players hand all fancy like
         # rewriting to print horizontal #TODO confirm work
 
-        print(" ".join(self.displayedHandTop))
-        print(" ".join(self.displayedHandLineOne))
-        print(" ".join(self.displayedHandLineTwo))
-        print(" ".join(self.displayedHandLineThree))
-        print(" ".join(self.displayedHandLineFour))
-        print(" ".join(self.displayedHandBottom))
+        print(" ".join(self.displayedHandTop[a:b:c]))
+        print(" ".join(self.displayedHandLineOne[a:b:c]))
+        print(" ".join(self.displayedHandLineTwo[a:b:c]))
+        print(" ".join(self.displayedHandLineThree[a:b:c]))
+        print(" ".join(self.displayedHandLineFour[a:b:c]))
+        print(" ".join(self.displayedHandBottom[a:b:c]))
 
         #print(f"{self.name}'s current hand:")
         #for card in range(len(self.hand)):
@@ -390,14 +394,27 @@ class Dealer(Player): #TODO add horizontal printing
         self.displayedHandBottom = []
 
     def starting_deal(self, deck):
+        
         for _ in range(2):
-            self.hand.append(deck.deal())
-        return display[str(self.hand[1])]
+            card = deck.deal()
+            self.hand.append(card)
+            self.add_card_to_display(str(card))
+
+        self.add_card_to_display('Dealer')
+        
     
     def initial_hand_display(self):
         print("Dealers initial hand: ")
-        print(display["Dealer"])
-        print(display[str(self.hand[1])])
+        
+        self.print_out_hand(a=2, b=0,c= -1)
+
+        self.displayedHandTop.pop()
+        self.displayedHandLineOne.pop()
+        self.displayedHandLineTwo.pop()
+        self.displayedHandLineThree.pop()
+        self.displayedHandLineFour.pop()
+        self.displayedHandBottom.pop()
+
 
     def __str__(self):
         return "Dealer is watching over the game"
@@ -500,7 +517,7 @@ def game_mode_selection():
 
     if gameModeCheck != '':
         try:
-            gameModeRoundsToPlay = int(gameModeCheck)
+            gameModeRoundsToPlay = int(gameModeCheck) # ig player enters y it will run again, #TODO get that outa here
             gameModeRunOut = False
         except ValueError:
             print("Please enter a number, or just press enter to play as runout.")
@@ -595,7 +612,7 @@ def dealer_turn():
 
     while dealerPoints < 17:
         mxDeal.hit(mainDeck)
-        print(display[str(mxDeal.hand[-1])])
+        print(display[str(mxDeal.hand[-1])]) #TODO remove old display
         dealerPoints = mxDeal.get_card_total()
     
     if dealerPoints == 21:
@@ -690,12 +707,11 @@ after initial setup, looping logic will run until the game is complete
 initiate_starting_deck()
 mxDeal = Dealer()
 resize_terminal()  # eyy it works!!  good to keep in mind for future projects
-intro()
-time.sleep(1)
-print_rules()
+#intro()
+#time.sleep(1)
+#print_rules()
 # noticing a problem here, the terminal isnt big enough to handle the "advanced rules" all together
 # I can split the words but i wanna try resizing the terminal first 
-print(str(mxDeal.natural))
 game_mode_selection()
 player_request()
 
