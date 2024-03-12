@@ -65,9 +65,6 @@ Double down
 advancedGame = False # game defaults to normal rules
 amountOfPlayers = 1
 playersList = []
-# playerNaturalCheck = {}
-# dealerBlackJack = False
-# dealerNatural21 = False
 fastType = False
 gameModeRunOut = True
 gameModeRoundsToPlay = 0
@@ -526,9 +523,9 @@ def first_round_deal():
     for player in playersList:
         player.starting_deal(mainDeck)
     
-    mrDeal.starting_deal(mainDeck)
-    print(mrDeal)
-    mrDeal.initial_hand_display()
+    mxDeal.starting_deal(mainDeck)
+    print(mxDeal)
+    mxDeal.initial_hand_display()
     
 def show_all_hands():
     # display the cards for each player 
@@ -567,22 +564,18 @@ def betting_round():
             n += 1
 
 def natural_check():
-    # Check for naturals - players first (first round only)
-    # global dealerNatural21
+    # Check for naturals - players first after deal only
 
     if len(playersList[0].hand) > 2:
         return
     for player in playersList:
         if player.get_card_total() == 21:
             player.natural = True
-            # playerNaturalCheck[str(player.name)] = True
         else:
             player.natural = False
-            # playerNaturalCheck[str(player.name)] = False
 
-    if mrDeal.get_card_total() == 21:
-        mrDeal.natural = True
-        # dealerNatural21 = True
+    if mxDeal.get_card_total() == 21:
+        mxDeal.natural = True
 
 def player_turn():
     #TODO player turn until all players are finished, must display final point score and if the player busts
@@ -595,22 +588,24 @@ def player_turn():
 
 def dealer_turn():
     # dealer turn, moved dealer natural check here since the original deal only showed 1 card
-    global dealerBlackJack
 
     print("Dealers turn!")
-    mrDeal.print_out_hand()
-    dealerPoints = mrDeal.get_card_total()
+    mxDeal.print_out_hand()
+    dealerPoints = mxDeal.get_card_total()
 
     while dealerPoints < 17:
-        mrDeal.hit(mainDeck)
-        print(display[str(mrDeal.hand[-1])])
-        dealerPoints = mrDeal.get_card_total()
+        mxDeal.hit(mainDeck)
+        print(display[str(mxDeal.hand[-1])])
+        dealerPoints = mxDeal.get_card_total()
     
     if dealerPoints == 21:
+        if mxDeal.natural == True:
+            print("Dealer natural 21!\nEveryone loses their bets unless they also have a natural!")
+            return
         print("Dealer BlackJack!")
-        dealerBlackJack = True
+        mxDeal.blackjack = True
     elif dealerPoints > 21:
-        mrDeal.bust = True
+        mxDeal.bust = True
         print("Dealer bust!\nEveryone still active wins!")
     
 def payout_and_turn_end():
@@ -627,7 +622,7 @@ def payout_and_turn_end():
             continue
 
         # dealer bust + player still active
-        if mrDeal.bust == True and player.bust == False:
+        if mxDeal.bust == True and player.bust == False:
             print(f"{player.name} has won {player.bet}!")
             player.bank = player.bank + player.bet
 
@@ -639,22 +634,27 @@ def payout_and_turn_end():
             continue
 
         # against dealer natural, only way to win is for the player to also have a natural
-        if mrDeal.natural == True: 
+        if mxDeal.natural == True: 
             for player in playersList:
                 if player.natural == True:
                     player.bank = player.bank + player.bet
                     print(f"{player.name} has countered a dealer natural with one of their own! You win you bet back!")
                 pass
             player.bank = player.bank - player.bet
+            print(f"{player.name} does not have a natural and lost their bet")
         
 
-        #TODO check against naturals for 1.0x payout, then non dealer blackjack and player natural for 1.5x payout, then normal wins and losses
-        if dealerBlackJack == False:
+        #TODO non dealer blackjack and player natural for 1.5x payout, then normal wins and losses
+        if mxDeal.blackjack == False:
             pass
     pass
 
 def reset_all(playerCount):
     #this will reset all player hands and check to make sure the deck has enough cards to make it through next round
+    mxDeal.blackjack = False
+    mxDeal.natural = False
+    mxDeal.hand.clear()
+    mxDeal.bust = False
 
     for player in playersList:
         player.hand.clear()
@@ -688,14 +688,14 @@ after initial setup, looping logic will run until the game is complete
 """
 
 initiate_starting_deck()
-mrDeal = Dealer()
-#resize_terminal()  # eyy it works!!  good to keep in mind for future projects
-#intro()
-#time.sleep(1)
-#print_rules()
+mxDeal = Dealer()
+resize_terminal()  # eyy it works!!  good to keep in mind for future projects
+intro()
+time.sleep(1)
+print_rules()
 # noticing a problem here, the terminal isnt big enough to handle the "advanced rules" all together
 # I can split the words but i wanna try resizing the terminal first 
-print(str(mrDeal.natural))
+print(str(mxDeal.natural))
 game_mode_selection()
 player_request()
 
