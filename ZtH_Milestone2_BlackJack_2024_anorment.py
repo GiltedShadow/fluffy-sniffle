@@ -62,6 +62,7 @@ Double down
 """
 
 #TODO add advanced rules capability
+#TODO add quit function to all user inputs
 advancedGame = False # game defaults to normal rules
 amountOfPlayers = 1
 playersList = []
@@ -247,7 +248,7 @@ class Player:
         
     def print_out_hand(self, a=0, b=999, c=1):
         # prints out the cards in the players hand all fancy like
-        # rewriting to print horizontal #TODO confirm work
+        # rewriting to print horizontal 
 
         print(f"{self.name}'s current hand:")
         print(" ".join(self.displayedHandTop[a:b:c]))
@@ -533,45 +534,73 @@ def dealer_turn():
         print("Dealer bust!\nEveryone still active wins!")
     
 def payout_and_turn_end():
-    #TODO payout, end turn
     #repeat until number of rounds is achieved or all players are zeroed out in the bank
 
-    n=0
-    
     for player in playersList:
         
         # immeadiatly weed out players that have lost in previous rounds
         if player.active == False:
-            n += 1
             continue
 
-        # dealer bust + player still active
-        if mxDeal.bust == True and player.bust == False:
+        # dealer bust + player has not bust
+        elif mxDeal.bust == True and player.bust == False:
             print(f"{player.name} has won {player.bet}!")
             player.bank = player.bank + player.bet
+            continue
 
         # taking the bet amount away from players that have bust this round
         elif player.bust == True:
             player.bank = player.bank - player.bet
-            print(player.player_information_printout())
+            print(f"{player.name} has bust, and has lost {player.bet}!")
             n += 1
             continue
 
         # against dealer natural, only way to win is for the player to also have a natural
-        if mxDeal.natural == True: 
+        elif mxDeal.natural == True: 
             for player in playersList:
                 if player.natural == True:
                     player.bank = player.bank + player.bet
                     print(f"{player.name} has countered a dealer natural with one of their own! You win you bet back!")
-                pass
+
             player.bank = player.bank - player.bet
             print(f"{player.name} does not have a natural and lost their bet")
+            continue
         
+        # player natural wins 1.5x bet
+        elif player.natural == True:
+            player.bank = player.bank + (player.bet * 1.5)
+            print(f"{player.name} has won with a natural blackjack and has won ${player.bet * 1.5}!")
+            continue
 
-        #TODO non dealer blackjack and player natural for 1.5x payout, then normal wins and losses
-        if mxDeal.blackjack == False:
-            pass
-    pass
+        # player 21 pts win
+        elif mxDeal.blackjack == False and player.blackjack == True:
+            player.bank = player.bank + player.bet
+            print(f"{player.name} has won with a 21 and has won ${player.bet}!")
+            continue
+
+        # Dealer and player 21 pts, no bank change
+        elif mxDeal.blackjack == True and player.blackjack == True:
+            print(f"{player.name} has countered a dealer blackjack with one of their own! Your bet has been returned!")
+            continue
+
+        # Dealer 21 player loss
+        elif mxDeal.blackjack == True:
+            player.bank = player.bank - player.bet
+            print(f"{player.name} has lost to a dealer blackjack and lost ${player.bet}!")
+            continue
+
+        # Dealer more or equal points to player, player loss    
+        elif mxDeal.get_card_total() >= player.get_card_total():
+            player.bank = player.bank - player.bet
+            print(f"{player.name} has less or equal points to the dealer and has lost ${player.bet}!")
+            continue
+        
+        # player more points than dealer, player win
+        elif player.get_card_total() > mxDeal.get_card_total():
+            player.bank = player.bank + player.bet
+            print(f"{player.name} has more points to the dealer and has won ${player.bet}!")
+            continue
+
 
 def reset_all(playerCount):
     #this will reset all player hands and check to make sure the deck has enough cards to make it through next round
