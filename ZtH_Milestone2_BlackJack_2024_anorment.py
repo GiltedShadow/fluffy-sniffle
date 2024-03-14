@@ -75,122 +75,6 @@ suits = ["Hearts", "Clubs", "Spades", "Diamonds"]
 ranks = ["Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"]
 values = {"Two": 2, "Three": 3, "Four": 4, "Five": 5, "Six": 6, "Seven": 7, "Eight": 8, "Nine": 9, "Ten": 10, "Jack": 10, "Queen": 10, "King": 10, "Ace": 11}
 
-# changing this out to display cards in order as opposed to one at a time (horizontal not vertical)
-display = {
-    "Dealer":
-    r"""
-.------.
-| .--. |
-| :/\: |
-| :\/: |
-| '--' |
-`------'""",
-    "Two":
-    r"""
-.------.
-|2.--. |
-| (\/) |
-| :\/: |
-| '--'2|
-`------'""",
-    "Three":
-    r"""
-.------.
-|3.--. |
-| :(): |
-| ()() |
-| '--'3|
-`------'""",
-    "Four": 
-    r"""
-.------.
-|4.--. |
-| :/\: |
-| :\/: |
-| '--'4|
-`------'""",
-    "Five":
-    r"""
-.------.
-|5.--. |
-| :/\: |
-| (__) |
-| '--'5|
-`------'""",
-    "Six":
-    r"""
-.------.
-|6.--. |
-| (\/) |
-| :\/: |
-| '--'6|
-`------'""",
-    "Seven":
-    r"""
-.------.
-|7.--. |
-| :(): |
-| ()() |
-| '--'7|
-`------'""",
-    "Eight":
-    r"""
-.------.
-|8.--. |
-| :/\: |
-| :\/: |
-| '--'8|
-`------'""",
-    "Nine":
-    r"""
-.------.
-|9.--. |
-| :/\: |
-| (__) |
-| '--'9|
-`------'""",
-    "Ten":
-    r"""
-.------.
-|10--. |
-| :/\: |
-| (__) |
-| '--10|
-`------'""",
-    "Jack":
-    r"""
-.------.
-|J.--. |
-| :(): |
-| ()() |
-| '--'J|
-`------'""",
-    "Queen":
-    r"""
-.------.
-|Q.--. |
-| (\/) |
-| :\/: |
-| '--'Q|
-`------'""",
-    "King":
-    r"""
-.------.
-|K.--. |
-| :/\: |
-| :\/: |
-| '--'K|
-`------'""",
-    "Ace":
-    r"""
-.------.
-|A.--. |
-| (\/) |
-| :\/: |
-| '--'A|
-`------'"""
-}
-
 displayHorizontal = {
     'Top':      r".------.",
     'Bottom':   r"`------'",
@@ -252,6 +136,8 @@ class Card:
         
     def __int__(self):
         return self.value
+
+### END CARD CLASS ###
     
 class Deck:
 
@@ -294,7 +180,9 @@ class Deck:
     def __len__(self):
         return len(self.deckOfCards)  
 
-class Player: #TODO add horizontal print
+### END DECK CLASS ###
+    
+class Player:
 
     def __init__(self, name):
         self.name = name
@@ -361,6 +249,7 @@ class Player: #TODO add horizontal print
         # prints out the cards in the players hand all fancy like
         # rewriting to print horizontal #TODO confirm work
 
+        print(f"{self.name}'s current hand:")
         print(" ".join(self.displayedHandTop[a:b:c]))
         print(" ".join(self.displayedHandLineOne[a:b:c]))
         print(" ".join(self.displayedHandLineTwo[a:b:c]))
@@ -368,7 +257,7 @@ class Player: #TODO add horizontal print
         print(" ".join(self.displayedHandLineFour[a:b:c]))
         print(" ".join(self.displayedHandBottom[a:b:c]))
 
-        #print(f"{self.name}'s current hand:")
+        #
         #for card in range(len(self.hand)):
         #    print(display[str(self.hand[card])])
 
@@ -378,7 +267,9 @@ class Player: #TODO add horizontal print
     def __str__(self):
         return self.name
     
-class Dealer(Player): #TODO add horizontal printing
+### END PLAYER CLASS ###
+    
+class Dealer(Player): 
     def __init__(self, name = "Dealer"):
         self.name = name
         self.hand = []
@@ -419,9 +310,12 @@ class Dealer(Player): #TODO add horizontal printing
     def __str__(self):
         return "Dealer is watching over the game"
     
+### END DEALER CLASS ###
+    
 def slow_type(inputString):
     # https://stackoverflow.com/questions/4099422/printing-slowly-simulate-typing
     # used for a more astetically pleasing approach to posting rules as opposed to posting a huge block of text
+
     if fastType == True:
         typing_speed = 7000 #wpm
     else:
@@ -434,6 +328,7 @@ def slow_type(inputString):
     print('')
 
 def intro():
+
     global fastType
     fastType = False
     slow_type("Welcome to Alex's")
@@ -442,6 +337,7 @@ def intro():
     slow_type(gameName)
 
 def print_rules():
+
     global fastType
     fastType = True
     slow_type(ruleLettering)
@@ -455,6 +351,7 @@ def print_rules():
 
 def player_request():
     # setting the amount of players with recursion to cover errors, then calls extra decks for more than 1 player
+
     global amountOfPlayers
     temp_player_request = input("Please enter the amount of players from 1 to 7: ")
 
@@ -474,18 +371,11 @@ def player_request():
     if amountOfPlayers > 1:
         multiple_players_multiple_decks(amountOfPlayers - 1)
 
-    #create_players(amountOfPlayers) #likely do not need this function since its only called here
     for player in range(amountOfPlayers):
         newPlayer = input(f"Player {player+1}, please enter your name: ")
         
         playersList.append(Player(newPlayer))
 
-def create_players(amountOfPlayers):
-    #likely do not need this function since its only called here
-    for player in range(amountOfPlayers):
-        newPlayer = input(f"Player {player+1}, please enter your name: ")
-        
-        playersList.append(Player(newPlayer))
     
 def multiple_players_multiple_decks(amountOfNewDecks):
     # called when requested to be above 1 player, will then add extra decks to match the number of players and then cut the deck
@@ -513,28 +403,44 @@ def game_mode_selection():
     #TODO make advaned rules work
 
     # Can probably make this and "play_until" the same function, only run once at the beginning of the game
-    gameModeCheck = input("Default settings for the game is normal rules with runout - that is player(s) will run out of money\nTo change this, please enter an amount of rounds to play, otherwise just hit enter to runout: ")
+    gameModeCheck = input("Default settings for the game is normal rules with runout - that is, player(s) will play until they run out of money\nWould you like to play a specified number of rounds instead? (y/n): ")
 
-    if gameModeCheck != '':
-        try:
-            gameModeRoundsToPlay = int(gameModeCheck) # ig player enters y it will run again, #TODO get that outa here
-            gameModeRunOut = False
-        except ValueError:
-            print("Please enter a number, or just press enter to play as runout.")
-            game_mode_selection()
+    if gameModeCheck.lower() == "y":
+        #player would like to play a number of rounds instead of running out
+
+        gameModeRunOut = False
+        #error catching for amount of rounds
+        while True:
+            gameModeCheck = input("Please enter the number of rounds that you would want to play: ")
+
+            try:
+                gameModeCheck = int(gameModeCheck)
+                gameModeRoundsToPlay = gameModeCheck
+                break
+            except ValueError:
+                print("Please enter a number of rounds to play.")
+                continue
+
+    elif gameModeCheck.lower() == "n":
+        gameModeRunOut = True
+    else:
+        print("Please enter y for yes or n for no")
+        game_mode_selection()
+
+    while True:
+        #error catching for advanced rules
+        gameModeCheck = input("Would you like to play by advanced rules including pairs splitting and double downs? (y/n): \nAdvaned rules currently not supported")
+
+        if gameModeCheck.lower() == 'y':
+            advancedGame = True
+            break
+        elif gameModeCheck.lower() == 'n':
+            advancedGame = False
+            break
+        else:
+            print("Please enter y for yes or n for no")
+            continue
     
-    gameModeCheck = input("Would you like to play by advanced rules including pairs splitting and double downs? (y/n): \nAdvaned rules currently not supported")
-
-    if gameModeCheck.lower() == 'y':
-        advancedGame = True
-    elif gameModeCheck.lower() == 'n':
-        advancedGame = False
-
-def play_until(gameModeRoundsToPlay):
-    #TODO request the number of rounds to play or run out of cash
-    # functionality moved to game_mode_selection
-    pass
-
 def first_round_deal():
     # get the initial deal out for each player and the dealer, and displayes dealer 1 card
     for player in playersList:
@@ -612,7 +518,8 @@ def dealer_turn():
 
     while dealerPoints < 17:
         mxDeal.hit(mainDeck)
-        print(display[str(mxDeal.hand[-1])]) #TODO remove old display
+        print("Dealer under 17, dealer hits!")
+        mxDeal.print_out_hand()
         dealerPoints = mxDeal.get_card_total()
     
     if dealerPoints == 21:
@@ -672,11 +579,26 @@ def reset_all(playerCount):
     mxDeal.natural = False
     mxDeal.hand.clear()
     mxDeal.bust = False
+    mxDeal.displayedHandTop.clear()
+    mxDeal.displayedHandLineOne.clear()
+    mxDeal.displayedHandLineTwo.clear()
+    mxDeal.displayedHandLineThree.clear()
+    mxDeal.displayedHandLineFour.clear()
+    mxDeal.displayedHandBottom.clear()
 
     for player in playersList:
+        player.blackjack = False
+        player.natural = False
         player.hand.clear()
         player.bust = False
-        player.natural = False
+        player.bet =0
+        player.displayedHandTop.clear()
+        player.displayedHandLineOne.clear()
+        player.displayedHandLineTwo.clear()
+        player.displayedHandLineThree.clear()
+        player.displayedHandLineFour.clear()
+        player.displayedHandBottom.clear()
+
         if player.active == False:
             print(f"{player.name} has lost after {player.roundOut} rounds")
             player.roundOut = currentRound
