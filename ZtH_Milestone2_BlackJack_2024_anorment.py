@@ -8,6 +8,7 @@ This program must contain:
 3. program must keep track of the players total money
 4. need to alert for player wins, losses, and busts
 """
+
 from os import system
 import sys
 import time
@@ -61,8 +62,21 @@ Double down
 >The dealer cannot double down or split pairs, and the player cannot do both but only play one way; normally, split, or double down
 """
 
+finalThankText = """
+    ______)                                      
+   (, /  /)          /)                          
+     /  (/   _  __  (/_         ___              
+  ) /   / )_(_(_/ (_/(__   (_/_(_)(_(_        /  
+ (_//)                /)  .-/    ,           /   
+   // _____     __   // _(_/      __   _    /    
+  /(_(_)/ (_    /_)_(/_(_(_(_/__(_/ (_(_/_ o     
+ /)          .-/          .-/        .-/         
+(/          (_/          (_/        (_/                            
+"""
+
 #TODO add advanced rules capability
 #TODO add quit function to all user inputs
+
 advancedGame = False # game defaults to normal rules
 amountOfPlayers = 1
 playersList = []
@@ -127,6 +141,7 @@ displayHorizontal = {
 }
 
 class Card:
+
     def __init__(self, rank, suit):
         self.rank = rank
         self.suit = suit
@@ -210,8 +225,6 @@ class Player:
             card = deck.deal()
             self.hand.append(card)
             self.add_card_to_display(card)
-        #print(self.hand[0])
-        #print(self.hand[1])
             
     def hit(self, deck):
         # used every time a player hits
@@ -233,7 +246,7 @@ class Player:
             total += int(self.hand[card])
 
         if total > 21 and hasAce == True:
-            return total - 10 # issue here, need a comparison int
+            return total - 10 # no longer an issue here, need a comparison int
         else:
             return total
 
@@ -257,10 +270,6 @@ class Player:
         print(" ".join(self.displayedHandLineThree[a:b:c]))
         print(" ".join(self.displayedHandLineFour[a:b:c]))
         print(" ".join(self.displayedHandBottom[a:b:c]))
-
-        #
-        #for card in range(len(self.hand)):
-        #    print(display[str(self.hand[card])])
 
     def player_information_printout(self):
         return f"Player {self.name} has {self.bank} in their bank"
@@ -306,7 +315,6 @@ class Dealer(Player):
         self.displayedHandLineThree.pop()
         self.displayedHandLineFour.pop()
         self.displayedHandBottom.pop()
-
 
     def __str__(self):
         return "Dealer is watching over the game"
@@ -377,9 +385,9 @@ def player_request():
         
         playersList.append(Player(newPlayer))
 
-    
 def multiple_players_multiple_decks(amountOfNewDecks):
     # called when requested to be above 1 player, will then add extra decks to match the number of players and then cut the deck
+
     for i in range(amountOfNewDecks):
         i = Deck()
         mainDeck.combine(i)
@@ -394,7 +402,6 @@ def initiate_starting_deck():
 
 def resize_terminal():
     system('mode con: cols=150 lines=49')
-    pass
 
 def game_mode_selection():
     global gameModeRoundsToPlay
@@ -421,7 +428,6 @@ def game_mode_selection():
             except ValueError:
                 print("Please enter a number of rounds to play.")
                 continue
-
     elif gameModeCheck.lower() == "n":
         gameModeRunOut = True
     else:
@@ -444,6 +450,7 @@ def game_mode_selection():
     
 def first_round_deal():
     # get the initial deal out for each player and the dealer, and displayes dealer 1 card
+
     for player in playersList:
         player.starting_deal(mainDeck)
     
@@ -453,6 +460,7 @@ def first_round_deal():
     
 def show_all_hands():
     # display the cards for each player 
+
     for player in playersList:
         print(player.player_information_printout())
         player.print_out_hand()
@@ -467,6 +475,7 @@ def betting_round():
     while n < playerCount:
         cashAvailable = playersList[n].bank
         betRequest = input(f"{playersList[n]}, please enter your bet up to $500, you have ${cashAvailable} to bet: ")
+
         try:
             betRequest = int(betRequest)
         except ValueError:
@@ -492,6 +501,7 @@ def natural_check():
 
     if len(playersList[0].hand) > 2:
         return
+    
     for player in playersList:
         if player.get_card_total() == 21:
             player.natural = True
@@ -527,6 +537,7 @@ def dealer_turn():
         if mxDeal.natural == True:
             print("Dealer natural 21!\nEveryone loses their bets unless they also have a natural!")
             return
+
         print("Dealer BlackJack!")
         mxDeal.blackjack = True
     elif dealerPoints > 21:
@@ -601,9 +612,9 @@ def payout_and_turn_end():
             print(f"{player.name} has more points to the dealer and has won ${player.bet}!")
             continue
 
-
 def reset_all(playerCount):
     #this will reset all player hands and check to make sure the deck has enough cards to make it through next round
+
     mxDeal.blackjack = False
     mxDeal.natural = False
     mxDeal.hand.clear()
@@ -631,6 +642,7 @@ def reset_all(playerCount):
         if player.active == False:
             print(f"{player.name} has lost after {player.roundOut} rounds")
             player.roundOut = currentRound
+
         else:
             print(player.player_information_printout())
     
@@ -638,18 +650,31 @@ def reset_all(playerCount):
         #time to reset the deck!
         print(f"Reshuffling the deck! Well done lasting this long everyone :D")
         initiate_starting_deck()
+
         if playerCount > 1:
             multiple_players_multiple_decks(playerCount - 1)
     
-
-
-
 def final_thanks_and_final_printout():
     #TODO final thanks and final printout
+    global fastType
+
+    #fastType = False
+    print("Game Over!\nCongratulations everyone, scores are as follows:")
+
+    for player in playersList:
+        print(player.player_information_printout())
+
+        if player.active == True:
+            print(f"{player.name} has lated through the whole game")
+
+        else:
+            print(f"{player.name} has lost during round {player.roundOut}")
+
+    fastType = True
+    slow_type(finalThankText)
+    input()
+    quit()
     
-
-    pass
-
 """
 Basic game logic to follow
 after initial setup, looping logic will run until the game is complete
