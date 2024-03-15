@@ -81,8 +81,8 @@ amountOfPlayers = 1
 playersList = []
 fastType = False
 gameModeRunOut = True
-gameModeRoundsToPlay = 0
-currentRound = 0
+gameModeRoundsToPlay = 999999
+currentRound = 1
 active = True
 
 suits = ["Hearts", "Clubs", "Spades", "Diamonds"]
@@ -208,7 +208,7 @@ class Player:
         self.roundOut = 0
         self.bust = False
         self.natural = False
-        self.backjack = False
+        self.blackjack = False
         # kinda clunky here, but will display in a good view
         self.displayedHandTop = []
         self.displayedHandLineOne = []
@@ -258,11 +258,11 @@ class Player:
         self.displayedHandLineFour.append(displayHorizontal[f"{card}-4"])
         self.displayedHandBottom.append(displayHorizontal["Bottom"])
         
-    def print_out_hand(self, a=0, b=999, c=1):
+    def print_out_hand(self, a=0, b=999, c=1, name = True):
         # prints out the cards in the players hand all fancy like
         # rewriting to print horizontal 
-
-        print(f"{self.name}'s current hand:")
+        if name:
+            print(f"{self.name}'s current hand:")
         print(" ".join(self.displayedHandTop[a:b:c]))
         print(" ".join(self.displayedHandLineOne[a:b:c]))
         print(" ".join(self.displayedHandLineTwo[a:b:c]))
@@ -306,7 +306,7 @@ class Dealer(Player):
     def initial_hand_display(self):
         print("Dealers initial hand: ")
         
-        self.print_out_hand(a=2, b=0,c= -1)
+        self.print_out_hand(a=2, b=0,c= -1, name = False)
 
         self.displayedHandTop.pop()
         self.displayedHandLineOne.pop()
@@ -465,6 +465,8 @@ def first_round_deal():
     # get the initial deal out for each player and the dealer, and displayes dealer 1 card
 
     for player in playersList:
+        if player.active == False:
+            continue
         player.starting_deal(mainDeck)
     
     mxDeal.starting_deal(mainDeck)
@@ -478,6 +480,9 @@ def natural_check():
         return
     
     for player in playersList:
+        if player.active == False:
+            continue
+
         if player.get_card_total() == 21:
             player.natural = True
         else:
@@ -488,7 +493,8 @@ def natural_check():
 
 def show_all_hands():
     # display the cards for each player 
-
+    # removing this function
+    
     for player in playersList:
         print(player.player_information_printout())
         player.print_out_hand()
@@ -502,6 +508,10 @@ def betting_round():
     n = 0
     while n < playerCount:
         cashAvailable = playersList[n].bank
+        if cashAvailable == 0:
+            n += 1
+            continue
+
         betRequest = input(f"{playersList[n]}, please enter your bet up to $500, you have ${cashAvailable} to bet: ")
         
         if betRequest.lower() == 'q':
@@ -534,29 +544,40 @@ def player_turn():
     n = 0
 
     for player in playersList:
-        print(f"{player.name}, it's your turn! You have ${player.bank} and {player.get_card_total()} points in your hand.")
-        player.print_out_hand()
+        if player.active == False:
+            continue
 
+        print(f"{player.name}, it's your turn! You have ${player.bank} and {player.get_card_total()} points in your hand.")
+    
         while True:
+            player.print_out_hand()
+            print(f"Current points = {player.get_card_total()}")
             if player.natural == True:
                 print(f"{player.name} has a natural 21 and will get 1.5x their bet.")
                 break
 
             playerAction = input("Now would you like to hit(1) or stay(2)? ")
-            if playerAction.lower() == 'hit' or playerAction == '1':
+            if playerAction.lower() == 'q':
+                final_thanks_and_final_printout()
+
+            elif playerAction.lower() == 'hit' or playerAction == '1':
                 player.hit(mainDeck)
                 if player.get_card_total() == 21:
-                    player.blackjack == True
-                    print(f"Congratulations {player.name}! You have a blackjack!")
+                    player.print_out_hand()
+                    print(f"Current points = {player.get_card_total()}")
+                    player.blackjack = True
+                    print(f"Congratulations {player.name}! You have a blackjack!\nMoving on to next player\n\n")
                     break
 
                 elif player.get_card_total() > 21:
+                    player.print_out_hand()
+                    print(f"Current points = {player.get_card_total()}")
                     player.bust = True
-                    print(f"Bad luck! {player.name} has bust and will lose their bet.")
+                    print(f"Bad luck! {player.name} has bust and will lose their bet.\n\n")
                     break
                 
             elif playerAction.lower() == 'stay' or playerAction == '2':
-                print(f"{player.name} has stayed, moving to next player.")
+                print(f"{player.name} has stayed, moving to next player.\nMoving on to next player\n\n")
                 break
                 
 def dealer_turn():
@@ -565,12 +586,14 @@ def dealer_turn():
     print("Dealers turn!")
     mxDeal.print_out_hand()
     dealerPoints = mxDeal.get_card_total()
+    print(f"Dealers current points = {dealerPoints}")
 
     while dealerPoints < 17:
         mxDeal.hit(mainDeck)
         print("Dealer under 17, dealer hits!")
         mxDeal.print_out_hand()
         dealerPoints = mxDeal.get_card_total()
+        print(f"Dealers current points = {dealerPoints}")
     
     if dealerPoints == 21:
         if mxDeal.natural == True:
@@ -584,9 +607,10 @@ def dealer_turn():
         print("Dealer bust!\nEveryone still active wins!")
     
 def player_bank_at_zero(player):
-    player.active == False
-    player.roundOut = currentRound
-    print(f"{player.name} has lost all of their money and has played their final turn during round {currentRound}")
+    player.active = False
+    if player.roundOut == 0:
+        player.roundOut = currentRound
+        print(f"{player.name} has lost all of their money and has played their final turn during round {currentRound}")
 
 def payout_and_turn_end():
     #repeat until number of rounds is achieved or all players are zeroed out in the bank, must display final point score
@@ -603,23 +627,24 @@ def payout_and_turn_end():
             player.bank = player.bank + player.bet
             continue
 
+        # against dealer natural, only way to win is for the player to also have a natural
+        elif mxDeal.natural == True: 
+            if player.natural == True:
+                player.bank = player.bank + player.bet
+                print(f"{player.name} has countered a dealer natural with one of their own! You win you bet back!")
+                continue
+            elif player.natural == False:
+                player.bank = player.bank - player.bet
+                print(f"{player.name} does not have a natural and lost their bet")
+                if player.bank == 0:
+                    player_bank_at_zero(player)
+                    continue
+                continue
+
         # taking the bet amount away from players that have bust this round
         elif player.bust == True:
             player.bank = player.bank - player.bet
             print(f"{player.name} has bust, and has lost {player.bet}!")
-            if player.bank == 0:
-                player_bank_at_zero(player)
-            continue
-
-        # against dealer natural, only way to win is for the player to also have a natural
-        elif mxDeal.natural == True: 
-            for player in playersList:
-                if player.natural == True:
-                    player.bank = player.bank + player.bet
-                    print(f"{player.name} has countered a dealer natural with one of their own! You win you bet back!")
-
-            player.bank = player.bank - player.bet
-            print(f"{player.name} does not have a natural and lost their bet")
             if player.bank == 0:
                 player_bank_at_zero(player)
             continue
@@ -673,6 +698,14 @@ def reset_all(playerCount):
         active = False
         return
     
+    this = False
+    for player in playersList:
+        if player.active == True:
+            this = True
+    if this == False:
+        active = False
+        return
+    
     mxDeal.blackjack = False
     mxDeal.natural = False
     mxDeal.hand.clear()
@@ -685,6 +718,8 @@ def reset_all(playerCount):
     mxDeal.displayedHandBottom.clear()
 
     for player in playersList:
+        if player.active == False:
+            continue
         player.blackjack = False
         player.natural = False
         player.hand.clear()
@@ -697,11 +732,9 @@ def reset_all(playerCount):
         player.displayedHandLineFour.clear()
         player.displayedHandBottom.clear()
 
-        if player.active == False and player.roundOut == currentRound:
-            print(f"{player.name} has lost after {player.roundOut} rounds")
-
-        else:
-            print(player.player_information_printout())
+        #if player.active == False and player.roundOut == currentRound:
+        #    print(f"{player.name} has lost after {player.roundOut} rounds")
+        print(player.player_information_printout())
     
     if len(mainDeck)/5 <= playerCount:
         #time to reset the deck!
@@ -717,13 +750,13 @@ def final_thanks_and_final_printout():
     global currentRound
 
     #fastType = False
-    print(f"Game Over!\nCongratulations everyone, current round is {currentRound} scores are as follows:")
+    print(f"Game Over!\nCongratulations everyone, current round is {currentRound - 1}, scores are as follows:")
 
     for player in playersList:
         print(player.player_information_printout())
 
         if player.active == True:
-            print(f"{player.name} has lated through the whole game")
+            print(f"{player.name} has lasted through the whole game")
 
         else:
             print(f"{player.name} has lost during round {player.roundOut}")
@@ -752,7 +785,7 @@ player_request()
 while active:
     first_round_deal()
     betting_round()
-    show_all_hands()
+    #show_all_hands()
     natural_check()
     player_turn()
     dealer_turn()
