@@ -75,7 +75,6 @@ finalThankText = """
 """
 
 #TODO add advanced rules capability
-#TODO add quit function to all user inputs
 
 advancedGame = False # game defaults to normal rules
 amountOfPlayers = 1
@@ -232,7 +231,7 @@ class Player:
         self.hand.append(card)
         self.add_card_to_display(card)
 
-    def print_out_card_total(self):
+    def print_out_card_total(self): #TODO make this a print statement
         return f"{self.name}'s card total is: {self.get_card_total()}"
     
     def get_card_total(self):
@@ -321,7 +320,7 @@ class Dealer(Player):
     
 ### END DEALER CLASS ###
     
-def slow_type(inputString):
+def slow_type(stringToSlowType):
     # https://stackoverflow.com/questions/4099422/printing-slowly-simulate-typing
     # used for a more astetically pleasing approach to posting rules as opposed to posting a huge block of text
 
@@ -330,14 +329,17 @@ def slow_type(inputString):
     else:
         typing_speed = 500
 
-    for letter in inputString:
+    for letter in stringToSlowType:
         sys.stdout.write(letter)
         sys.stdout.flush()
         time.sleep(random.random()*10.0/typing_speed)
     print('')
 
-def intro():
+def resize_terminal():
+    system('mode con: cols=150 lines=49')
 
+def intro():
+    
     global fastType
     fastType = False
     slow_type("Welcome to Alex's")
@@ -345,8 +347,10 @@ def intro():
     fastType = True
     slow_type(gameName)
 
-def print_rules():
-
+def print_rules(bigNames = True):
+    #separated from into just in case there is a need to add a rules call
+    #bigNames can be used to add the ASCII art or take it away
+    
     global fastType
     fastType = True
     slow_type(ruleLettering)
@@ -358,11 +362,30 @@ def print_rules():
     fastType = False
     slow_type(advancedRules)
 
+def initiate_starting_deck():
+    global mainDeck 
+    mainDeck = Deck()
+    mainDeck.shuffle()
+    mainDeck.split()
+
+def multiple_players_multiple_decks(amountOfNewDecks):
+    # called when requested to be above 1 player, will then add extra decks to match the number of players and then cut the deck
+
+    for i in range(amountOfNewDecks):
+        i = Deck()
+        mainDeck.combine(i)
+    mainDeck.shuffle()
+    print(mainDeck.cut())
+
 def player_request():
     # setting the amount of players with recursion to cover errors, then calls extra decks for more than 1 player
 
     global amountOfPlayers
     temp_player_request = input("Please enter the amount of players from 1 to 7: ")
+
+    if temp_player_request.lower() == 'q':
+        input("quitting..")
+        quit()
 
     try:
         amountOfPlayers = int(temp_player_request)
@@ -385,24 +408,6 @@ def player_request():
         
         playersList.append(Player(newPlayer))
 
-def multiple_players_multiple_decks(amountOfNewDecks):
-    # called when requested to be above 1 player, will then add extra decks to match the number of players and then cut the deck
-
-    for i in range(amountOfNewDecks):
-        i = Deck()
-        mainDeck.combine(i)
-    mainDeck.shuffle()
-    print(mainDeck.cut())
-
-def initiate_starting_deck():
-    global mainDeck 
-    mainDeck = Deck()
-    mainDeck.shuffle()
-    mainDeck.split()
-
-def resize_terminal():
-    system('mode con: cols=150 lines=49')
-
 def game_mode_selection():
     global gameModeRoundsToPlay
     global gameModeRunOut
@@ -413,6 +418,10 @@ def game_mode_selection():
     # Can probably make this and "play_until" the same function, only run once at the beginning of the game
     gameModeCheck = input("Default settings for the game is normal rules with runout - that is, player(s) will play until they run out of money\nWould you like to play a specified number of rounds instead? (y/n): ")
 
+    if gameModeCheck.lower() == 'q':
+        input("quitting..")
+        quit()
+
     if gameModeCheck.lower() == "y":
         #player would like to play a number of rounds instead of running out
 
@@ -420,6 +429,10 @@ def game_mode_selection():
         #error catching for amount of rounds
         while True:
             gameModeCheck = input("Please enter the number of rounds that you would want to play: ")
+
+            if gameModeCheck.lower() == 'q':
+                input("quitting..")
+                quit()
 
             try:
                 gameModeCheck = int(gameModeCheck)
@@ -458,6 +471,21 @@ def first_round_deal():
     print(mxDeal)
     mxDeal.initial_hand_display()
     
+def natural_check():
+    # Check for naturals - players first after deal only
+
+    if len(playersList[0].hand) > 2:
+        return
+    
+    for player in playersList:
+        if player.get_card_total() == 21:
+            player.natural = True
+        else:
+            player.natural = False
+
+    if mxDeal.get_card_total() == 21:
+        mxDeal.natural = True
+
 def show_all_hands():
     # display the cards for each player 
 
@@ -475,6 +503,9 @@ def betting_round():
     while n < playerCount:
         cashAvailable = playersList[n].bank
         betRequest = input(f"{playersList[n]}, please enter your bet up to $500, you have ${cashAvailable} to bet: ")
+        
+        if betRequest.lower() == 'q':
+            final_thanks_and_final_printout()
 
         try:
             betRequest = int(betRequest)
@@ -496,30 +527,38 @@ def betting_round():
 
             n += 1
 
-def natural_check():
-    # Check for naturals - players first after deal only
-
-    if len(playersList[0].hand) > 2:
-        return
-    
-    for player in playersList:
-        if player.get_card_total() == 21:
-            player.natural = True
-        else:
-            player.natural = False
-
-    if mxDeal.get_card_total() == 21:
-        mxDeal.natural = True
-
 def player_turn():
-    #TODO player turn until all players are finished, must display final point score and if the player busts
+    # player turn until all players are finished
     #TODO add advanced logic
 
+    n = 0
 
+    for player in playersList:
+        print(f"{player.name}, it's your turn! You have ${player.bank} and {player.get_card_total()} points in your hand.")
+        player.print_out_hand()
 
+        while True:
+            if player.natural == True:
+                print(f"{player.name} has a natural 21 and will get 1.5x their bet.")
+                break
 
-    pass
+            playerAction = input("Now would you like to hit(1) or stay(2)? ")
+            if playerAction.lower() == 'hit' or playerAction == '1':
+                player.hit(mainDeck)
+                if player.get_card_total() == 21:
+                    player.blackjack == True
+                    print(f"Congratulations {player.name}! You have a blackjack!")
+                    break
 
+                elif player.get_card_total() > 21:
+                    player.bust = True
+                    print(f"Bad luck! {player.name} has bust and will lose their bet.")
+                    break
+                
+            elif playerAction.lower() == 'stay' or playerAction == '2':
+                print(f"{player.name} has stayed, moving to next player.")
+                break
+                
 def dealer_turn():
     # dealer turn, moved dealer natural check here since the original deal only showed 1 card
 
@@ -544,9 +583,14 @@ def dealer_turn():
         mxDeal.bust = True
         print("Dealer bust!\nEveryone still active wins!")
     
-def payout_and_turn_end():
-    #repeat until number of rounds is achieved or all players are zeroed out in the bank
+def player_bank_at_zero(player):
+    player.active == False
+    player.roundOut = currentRound
+    print(f"{player.name} has lost all of their money and has played their final turn during round {currentRound}")
 
+def payout_and_turn_end():
+    #repeat until number of rounds is achieved or all players are zeroed out in the bank, must display final point score
+    global currentRound
     for player in playersList:
         
         # immeadiatly weed out players that have lost in previous rounds
@@ -563,7 +607,8 @@ def payout_and_turn_end():
         elif player.bust == True:
             player.bank = player.bank - player.bet
             print(f"{player.name} has bust, and has lost {player.bet}!")
-            n += 1
+            if player.bank == 0:
+                player_bank_at_zero(player)
             continue
 
         # against dealer natural, only way to win is for the player to also have a natural
@@ -575,6 +620,8 @@ def payout_and_turn_end():
 
             player.bank = player.bank - player.bet
             print(f"{player.name} does not have a natural and lost their bet")
+            if player.bank == 0:
+                player_bank_at_zero(player)
             continue
         
         # player natural wins 1.5x bet
@@ -598,12 +645,16 @@ def payout_and_turn_end():
         elif mxDeal.blackjack == True:
             player.bank = player.bank - player.bet
             print(f"{player.name} has lost to a dealer blackjack and lost ${player.bet}!")
+            if player.bank == 0:
+                player_bank_at_zero(player)
             continue
 
         # Dealer more or equal points to player, player loss    
         elif mxDeal.get_card_total() >= player.get_card_total():
             player.bank = player.bank - player.bet
             print(f"{player.name} has less or equal points to the dealer and has lost ${player.bet}!")
+            if player.bank == 0:
+                player_bank_at_zero(player)
             continue
         
         # player more points than dealer, player win
@@ -614,7 +665,14 @@ def payout_and_turn_end():
 
 def reset_all(playerCount):
     #this will reset all player hands and check to make sure the deck has enough cards to make it through next round
+    global currentRound
+    global gameModeRoundsToPlay
+    global active
 
+    if currentRound == gameModeRoundsToPlay:
+        active = False
+        return
+    
     mxDeal.blackjack = False
     mxDeal.natural = False
     mxDeal.hand.clear()
@@ -639,9 +697,8 @@ def reset_all(playerCount):
         player.displayedHandLineFour.clear()
         player.displayedHandBottom.clear()
 
-        if player.active == False:
+        if player.active == False and player.roundOut == currentRound:
             print(f"{player.name} has lost after {player.roundOut} rounds")
-            player.roundOut = currentRound
 
         else:
             print(player.player_information_printout())
@@ -655,11 +712,12 @@ def reset_all(playerCount):
             multiple_players_multiple_decks(playerCount - 1)
     
 def final_thanks_and_final_printout():
-    #TODO final thanks and final printout
+    # final thanks and final printout
     global fastType
+    global currentRound
 
     #fastType = False
-    print("Game Over!\nCongratulations everyone, scores are as follows:")
+    print(f"Game Over!\nCongratulations everyone, current round is {currentRound} scores are as follows:")
 
     for player in playersList:
         print(player.player_information_printout())
