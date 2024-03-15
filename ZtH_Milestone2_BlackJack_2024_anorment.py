@@ -741,9 +741,9 @@ after initial setup, looping logic will run until the game is complete
 initiate_starting_deck()
 mxDeal = Dealer()
 resize_terminal()  # eyy it works!!  good to keep in mind for future projects
-#intro()
-#time.sleep(1)
-#print_rules()
+intro()
+time.sleep(1)
+print_rules()
 # noticing a problem here, the terminal isnt big enough to handle the "advanced rules" all together
 # I can split the words but i wanna try resizing the terminal first 
 game_mode_selection()
