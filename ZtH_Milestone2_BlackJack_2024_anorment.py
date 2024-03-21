@@ -75,6 +75,7 @@ finalThankText = """
 """
 
 #TODO add advanced rules capability
+#TODO this
 
 advancedGame = False # game defaults to normal rules
 amountOfPlayers = 1
