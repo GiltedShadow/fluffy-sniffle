@@ -74,7 +74,7 @@ finalThankText = """
 (/          (_/          (_/        (_/                            
 """
 
-#TODO add advanced rules capability
+#TODO add advanced rules capability and test with other users
 #TODO this
 
 advancedGame = False # game defaults to normal rules
