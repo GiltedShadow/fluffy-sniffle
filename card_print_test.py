@@ -49,6 +49,8 @@ def print_out_hand(player):
     pass
 
 lineStyle = {
+    #Top and bottom cards are the same throughout
+    #only needing to change the middle lines
     'top':      r".------.",
     'bottom':   r"`------'",
 
